@@ -4,12 +4,12 @@ from fastapi import FastAPI
 from fastapi import HTTPException
 from decouple import config
 from U2Net.u2net_test import main as u2test
-from RemBg.rb import remove_yes_bg,remove_no_bg            #rembg import
+from RemBg.rb import remove_yes_bg,remove_no_bg
+from CIHP.inference_pgn import main as cihp
 from request_body import rb
 import pymysql
 import boto3
 import os
-
 
 
 app = FastAPI()
@@ -46,9 +46,9 @@ def run_u2net(body: rb):
     print("run_u2net called")
     print(body)
     # 1. 요청한 계정에 요청받은 파일명이 존재하는지 DB에서 확인한다
-    sql = ("select photo_img_name, member_seq"
-           "from member join cloth using member_seq"
-           "where member_id = %s and cloth_img_name = %s")
+    sql = ("SELECT photo_img_name, member_seq"
+           "FROM member join cloth USING (member_seq)"
+           "WHERE member_id = %s and cloth_img_name = %s")
     cursor.execute(sql, (rb.member_id, rb.photo_img_name))
 
     results = cursor.fetchall()
@@ -88,8 +88,6 @@ def run_u2net(body: rb):
 
     # 7. 호출자에게 완료를 반환한다.
     return {"result": "성공"}
-
-
 
 
 @app.post("/rembg/cloth")    #옷 
@@ -142,12 +140,11 @@ def run_rembg_for_cloth(body:rb):
         print(f"파일 삭제 중 오류 발생: {e}")
 
     # 7. 호출자에게 완료를 반환한다.
-    return {"result": "성공", "stdout": stdout}
-    
+    return {"result": "성공"}
 
 
 @app.post("/rembg/photo")    #사람사진 누끼 
-def run_rembg_for_photo(body:rb):
+def run_rembg_for_photo(body: rb):
     print("run_rembg_photo called")
     print(body)
     #file_name은 계속써두 됨 photo_img_name
@@ -197,12 +194,14 @@ def run_rembg_for_photo(body:rb):
         print(f"파일 삭제 중 오류 발생: {e}")
 
     # 7. 호출자에게 완료를 반환한다.
-    return {"result": "성공", "stdout": stdout}
+    return {"result": "성공"}
 
 
 @app.post("/cihp")  #사람부위별 마스킹
-def run_cihp():
-    print()
+def run_cihp(body: rb):
+    print("run_cihp called")
+
+
 
 
 
