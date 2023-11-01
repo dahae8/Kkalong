@@ -52,6 +52,8 @@ def save_output(image_name,pred,d_dir):
     imo.save(d_dir+imidx+'.jpg')
 
 def main():
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"] = "4,5"
 
     # --------- 1. get image path and name ---------
     model_name='u2net'#u2netp

@@ -4,6 +4,7 @@ from decouple import config
 import subprocess
 import pymysql
 import boto3
+from botocore.exceptions import NoCredentialsError, EndpointConnectionError
 import os
 
 from openpose_request_body import orb
@@ -44,14 +45,14 @@ def get_dummy():
     return "download succeed"
 
 ## Openpose를 돌려주는 API
-@app.get("/openpose")
+@app.post("/openpose")
 async def run_openpose(rb: orb):
     print("run_openpose called")
     print(rb)
     # 1. 요청한 계정에 요청받은 파일명이 존재하는지 DB에서 확인한다
     sql = ("select photo_img_name, member_seq"
            "from member join photo using member_seq"
-           "where member_id = %s and photo_img_name = %s")
+           "where member_id = %s and photo_img_name = %s and photo_img_yes_bg = 1")
     cursor.execute(sql, (rb.member_id, rb.photo_img_name))
 
     # 2. 없다면 에러 보내고, 있다면 해당 파일을 다운 받는다.
@@ -80,12 +81,12 @@ async def run_openpose(rb: orb):
     # 4. 작업이 끝나면 파일을 S3서버에 올린다
     try:
         s3.upload_file(r"./output_images/" + rb.photo_img_name + "_rendered.png", bucket_name,
-                       "openpose/img/" + rb.photo_img_name + ".png")
+                       "photo/openpose/img/" + rb.photo_img_name + ".png")
         s3.upload_file(r"./output_jsons/" + rb.photo_img_name + "_keypoints.json", bucket_name,
-                       "openpose/json/" + rb.photo_img_name + ".json")
-    except boto3.exceptions.NoCredentialsError:
+                       "photo/openpose/json/" + rb.photo_img_name + ".json")
+    except NoCredentialsError:
         return "AWS 자격 증명을 찾을 수 없습니다. 자격 증명을 설정하세요."
-    except boto3.exceptions.EndpointConnectionError:
+    except EndpointConnectionError:
         return "S3 엔드포인트에 연결할 수 없습니다. 리전을 확인하세요."
 
     # 5. DB에 작업이 되어 있음으로 업데이트 한다.

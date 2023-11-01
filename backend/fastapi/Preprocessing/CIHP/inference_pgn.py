@@ -8,7 +8,6 @@ import scipy.misc
 import scipy.io as sio
 import cv2
 from glob import glob
-os.environ["CUDA_VISIBLE_DEVICES"]="0"
 
 import tensorflow as tf
 import numpy as np
@@ -24,6 +23,9 @@ RESTORE_FROM = './checkpoint'
 
 
 def main():
+    os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
+    os.environ["CUDA_VISIBLE_DEVICES"]="4,5"
+
     """Create the model and start the evaluation process."""
     # Create queue coordinator.
     coord = tf.train.Coordinator()
@@ -185,5 +187,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-##############################################################333
