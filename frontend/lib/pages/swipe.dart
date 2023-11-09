@@ -1,15 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
-import 'dart:convert';
-
-void main() {
-  runApp(
-      MaterialApp(
-          theme: ThemeData(),
-          home: Swipe()
-      )
-  );
-}
+import 'package:dio/dio.dart';
 
 class Swipe extends StatefulWidget {
   const Swipe({Key? key}) : super(key: key);
@@ -20,6 +10,9 @@ class Swipe extends StatefulWidget {
 
 class _SwipeState extends State<Swipe> {
   final TextEditingController inputController = TextEditingController();
+  final Dio dio = Dio(); // Dio HTTP 클라이언트 초기화
+  final serverURL = 'http://k9c105.p.ssafy.io:8761';
+  // final serverURL = 'https://codingapple1.github.io/app/data.json';
 
   List<String> cards = [
     'https://image.newsis.com/2022/07/08/NISI20220708_0001037503_web.jpg',
@@ -32,58 +25,62 @@ class _SwipeState extends State<Swipe> {
 
   var data = [];
   var imgUrl = '';
-  getData() async{
-    var result = await http.get(Uri.parse('https://codingapple1.github.io/app/data.json'));
-    // var result = await http.get(Uri.parse('http://k9c105.p.ssafy.io:8761/api/assess'));
-    if (result.statusCode == 200) {
-      var result2 = jsonDecode(result.body);
-      setState(() {
-        data = result2;
-        // imgUrl = data['imgUrl'];
-      });
+  var fashionSeq = 0;
+
+  Future<dynamic> dioData() async {
+    try {
+      final response = await dio.get('$serverURL/api/assess',
+        // queryParameters: {'userEmail': id}
+      );
+      print(response.data);
+      return response.data;
+    } catch (e) {
+      print(e);
       print('getData');
-    } else {
-      _showErrorDialog('오류 발생: ${result.statusCode}');
     }
   }
 
-  likeData() async{
-    var request = http.MultipartRequest('POST', Uri.parse('http://k9c105.p.ssafy.io:8761/api/assess'));
-
-    request.fields['fashionSeq'] = '0';
-    request.fields['like'] = 'true';
-    var response = await request.send();
-
-    if (response.statusCode == 200) {
-      var responseData = await response.stream.toBytes();
-      var responseString = String.fromCharCodes(responseData);
-      var result = jsonDecode(responseString);
-      setState(() {
-        data = result;
+  Future<dynamic> likeData() async {
+    Response response;
+    try {
+      // final deviceToken = getMyDeviceToken();
+      final response = await dio.post('$serverURL/api/assess', data: {
+        'fashionSeq': fashionSeq,
+        'like': true,
       });
+      print(response.data);
       print('likeData');
-    } else {
-      _showErrorDialog('오류 발생: ${response.statusCode}');
+      return response.data;
+    } catch (e) {
+      print(e);
+      print('likeData');
+      if (e is DioError) { // DioError를 확인
+        _showErrorDialog('오류 발생: ${e.response?.statusCode}');
+      } else {
+        _showErrorDialog('알 수 없는 오류 발생');
+      }
     }
   }
 
-  hateData() async{
-    var request = http.MultipartRequest('POST', Uri.parse('http://k9c105.p.ssafy.io:8761/api/assess'));
-
-    request.fields['fashionSeq'] = '0';
-    request.fields['like'] = 'false';
-    var response = await request.send();
-
-    if (response.statusCode == 200) {
-      var responseData = await response.stream.toBytes();
-      var responseString = String.fromCharCodes(responseData);
-      var result = jsonDecode(responseString);
-      setState(() {
-        data = result;
+  Future<dynamic> hateData() async {
+    Response response;
+    try {
+      // final deviceToken = getMyDeviceToken();
+      final response = await dio.post('$serverURL/api/assess', data: {
+        'fashionSeq': fashionSeq,
+        'like': false,
       });
+      print(response.data);
       print('hateData');
-    } else {
-      _showErrorDialog('오류 발생: ${response.statusCode}');
+      return response.data;
+    } catch (e) {
+      print(e);
+      print('hateData');
+      if (e is DioError) { // DioError를 확인
+        _showErrorDialog('오류 발생: ${e.response?.statusCode}');
+      } else {
+        _showErrorDialog('알 수 없는 오류 발생');
+      }
     }
   }
 
@@ -105,104 +102,122 @@ class _SwipeState extends State<Swipe> {
     );
   }
 
+  @override
+  void initState() {
+    super.initState();
+    dioData();
+  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: const Color(0xFFF5BEB5),
-        toolbarHeight: 55,
-        title: const Text(
-          '코디평가',
-          style: TextStyle(color: Colors.white),
-        ),
-        centerTitle: true,
-        elevation: 0,
-        leading: const Text(''),
-      ),
-      body: Container(
-          padding: const EdgeInsets.all(30),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
-                    child: Text(
-                      '싸피깔롱쟁이',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                        color: Color(0xFFF5BEB5),
-                      ),
-                    ),
-                  ),
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
-                    child: Text(
-                      '님의 코디',
-                      style: TextStyle(
-                        fontSize: 20,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Icon(Icons.chevron_left,
-                    size: 40,
-                    color: Color(0xFF54545b),),
-        Center(
-          child: cards.isEmpty
-              ? Text('No more cards')
-              : Dismissible(
-            key: Key(cards.first),
-            onDismissed: (direction) {
-              // 오른쪽에서 왼쪽으로 스와이프한 경우 싫어요
-              if (direction == DismissDirection.endToStart) {
-
-                print('싫어요'); // 원하는 로직으로 대체
-                getData();
-              }
-              // 왼쪽에서 오른쪽으로 스와이프한 경우 좋아요
-              else if (direction == DismissDirection.startToEnd) {
-                print('좋아요'); // 원하는 로직으로 대체
-                getData();
-              }
-
-              setState(() {
-                cards.removeAt(0);
-              });
-            },
-            child: Card(
-              child: Container(
-                height: 300,
-                width: 200,
-                alignment: Alignment.center,
-                child: Image.network(
-                  cards.first,
-                  fit: BoxFit.cover,
-                ),
-              ),
+      backgroundColor: const Color.fromARGB(255, 202, 198, 197),
+      body: CustomScrollView(
+        slivers: <Widget>[
+          const SliverAppBar(
+            backgroundColor: Color(0xFFF5BEB5),
+            expandedHeight: 55.0,
+            floating: true,
+            pinned: true,
+            title: Text(
+              '코디 평가',
+              style: TextStyle(color: Colors.white),
             ),
+            centerTitle: true,
+            elevation: 0,
+            leading: Text(''),
           ),
-        ),
-                  Icon(Icons.chevron_right,
-                    size: 40,
-                    color: Color(0xFF54545b),),
-                ],
-              ),
-              Center(
-                child: Image.asset('assets/swipe.png'),
-              ),
-            ],
-          )),
+          SliverPadding(padding: const EdgeInsets.fromLTRB(0, 1, 0, 0),
+            sliver: SliverToBoxAdapter(
+              child: Container(
+                  padding: const EdgeInsets.all(30),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.start,
+                        children: [
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
+                            child: Text(
+                              '싸피깔롱쟁이',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFFF5BEB5),
+                              ),
+                            ),
+                          ),
+                          Padding(
+                            padding: EdgeInsets.fromLTRB(0, 5, 0, 5),
+                            child: Text(
+                              '님의 코디',
+                              style: TextStyle(
+                                fontSize: 20,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Icon(Icons.chevron_left,
+                            size: 40,
+                            color: Color(0xFF54545b),),
+                          Expanded(
+                            child: Center(
+                              child: cards.isEmpty
+                                  ? Text('No more cards')
+                                  : Dismissible(
+                                key: Key(cards.first),
+                                onDismissed: (direction) {
+                                  // 오른쪽에서 왼쪽으로 스와이프한 경우 싫어요
+                                  if (direction == DismissDirection.endToStart) {
+
+                                    print('싫어요'); // 원하는 로직으로 대체
+                                    dioData();
+                                    hateData();
+                                  }
+                                  // 왼쪽에서 오른쪽으로 스와이프한 경우 좋아요
+                                  else if (direction == DismissDirection.startToEnd) {
+                                    print('좋아요'); // 원하는 로직으로 대체
+                                    dioData();
+                                    likeData();
+                                  }
+
+                                  setState(() {
+                                    cards.removeAt(0);
+                                  });
+                                },
+                                child: AspectRatio(
+                                  aspectRatio: 3 / 5,
+                                  child: Card(
+                                    child: Image.network(
+                                        cards.first,
+                                        fit: BoxFit.cover,
+                                      ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ),
+                          Icon(Icons.chevron_right,
+                            size: 40,
+                            color: Color(0xFF54545b),),
+                        ],
+                      ),
+                      Center(
+                        child: Image.asset('Assets/Image/swipe.png'),
+                      ),
+                    ],
+                  )),
+            ),
+          )
+        ],
+      ),
     );
   }
 }

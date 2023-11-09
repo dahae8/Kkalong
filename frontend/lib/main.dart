@@ -13,6 +13,7 @@ import './closet/closetdetail.dart';
 import './closet/mycloset.dart';
 import './category/category.dart';
 import './user/pageapi.dart';
+import './pages/swipe.dart';
 
 void main() {
   runApp(
@@ -86,7 +87,7 @@ class _MainState extends State<Main> {
                 ChoicePicture(),
                 MyCloset(),
                 CategoryPage(),
-                ClosetDetail(),
+                Swipe(),
                 MyPage(),
                 // userToken == null
                 //     ? LogIn(storage: storage)
